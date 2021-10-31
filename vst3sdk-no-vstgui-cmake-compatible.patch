@@ -1,0 +1,243 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9807407..4e2b647 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,21 +1,10 @@
+ 
+ cmake_minimum_required (VERSION 3.4.3)
+ 
+-#-------------------------------------------------------------------------------
+-# Options
+-#-------------------------------------------------------------------------------
+-# Add VST3 Plug-ins Samples
+-option(SMTG_ADD_VST3_PLUGINS_SAMPLES "Add VST3 Plug-ins Samples to the solution" ON)
+-
+-# Add and use VSTGUI (enable VST3 Plug-ins Samples using VSTGUI)
+-option(SMTG_ADD_VSTGUI "Add VSTGUI Support" ON)
+-
+ #-------------------------------------------------------------------------------
+ # Includes
+ #-------------------------------------------------------------------------------
+-
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+-
+ include(SMTG_VST3_SDK)
+ 
+ #-------------------------------------------------------------------------------
+@@ -24,7 +13,6 @@ include(SMTG_VST3_SDK)
+ project(vstsdk)
+ 
+ smtg_setup_platform_toolset()
+-
+ set(ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
+ 
+ # Here you can define where the VST 3 SDK is located
+@@ -32,27 +20,7 @@ set(SDK_ROOT "${ROOT}")
+ set(public_sdk_SOURCE_DIR ${SDK_ROOT}/public.sdk)
+ set(pluginterfaces_SOURCE_DIR ${SDK_ROOT}/pluginterfaces)
+ 
+-# Disable all VST3 samples when using SDK as subdirectory
+-message(STATUS "[SMTG] CMAKE_SOURCE_DIR is set to: ${CMAKE_SOURCE_DIR}")
+-message(STATUS "[SMTG] CMAKE_CURRENT_LIST_DIR is set to: ${CMAKE_CURRENT_LIST_DIR}")
+-
+-if(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_LIST_DIR})
+-    message(STATUS "[SMTG] Disable all VST3 samples")
+-    set(SMTG_ADD_VST3_PLUGINS_SAMPLES OFF)
+-    set(SMTG_ADD_VST3_HOSTING_SAMPLES OFF)
+-    set(SMTG_ADD_MYPLUGINS_SRC_PATH OFF)
+-else()
+-    set(SMTG_ADD_MYPLUGINS_SRC_PATH ON)
+-endif()
+-
+-# Here you can define where the VSTGUI is located
+-if(SMTG_ADD_VSTGUI)
+-    set(SMTG_VSTGUI_ROOT "${ROOT}")
+-    smtg_enable_vstgui_support()
+-endif(SMTG_ADD_VSTGUI)
+-
+ include_directories(${ROOT} ${SDK_ROOT})
+-
+ #-------------------------------------------------------------------------------
+ # From Here this is optional...
+ 
+@@ -87,93 +55,66 @@ if(SMTG_AAX_SDK_PATH)
+     )
+ endif(SMTG_AAX_SDK_PATH)
+ 
+-# Add hosting examples, it includes the validator (must be done before any plug-ins to support running the validator after building)
+-set(SDK_IDE_HOSTING_EXAMPLES_FOLDER FOLDER "HostingExamples")
+-add_subdirectory(public.sdk/samples/vst-hosting)
+ 
+-#-------------------------------------------------------------------------------
+-# Here is added your own plug-ins folder location
+-# (by default we add the HelloWorld included in my_plugins folder)
+-#-------------------------------------------------------------------------------
+-if(SMTG_ADD_MYPLUGINS_SRC_PATH)
+-    set(SMTG_MYPLUGINS_SRC_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../my_plugins" CACHE PATH "Here you can add Your VST3 Plug-ins folder")
+-
+-    if(EXISTS ${SMTG_MYPLUGINS_SRC_PATH})
+-        message(STATUS "[SMTG] SMTG_MYPLUGINS_SRC_PATH is set to: " ${SMTG_MYPLUGINS_SRC_PATH})
+-    else()
+-        message(STATUS "[SMTG] SMTG_MYPLUGINS_SRC_PATH is not set. If you want to add your own Plug-ins folder, specify it!")
+-    endif()
+-
+-    set(SDK_IDE_MYPLUGINS_FOLDER FOLDER "MyPlugIns")
+-    if(EXISTS ${SMTG_MYPLUGINS_SRC_PATH})
+-        set(SMTG_MYPLUGINS_BIN_PATH "${SMTG_MYPLUGINS_SRC_PATH}/build")
+-        add_subdirectory(${SMTG_MYPLUGINS_SRC_PATH} ${SMTG_MYPLUGINS_BIN_PATH})
+-    endif()
+-endif(SMTG_ADD_MYPLUGINS_SRC_PATH)
+-
+-#---Add VST3 examples (plug-ins and hosting)-----
+-if(SMTG_ADD_VST3_PLUGINS_SAMPLES)
+-    set(SDK_IDE_PLUGIN_EXAMPLES_FOLDER FOLDER "PlugInExamples")
+-    add_subdirectory(public.sdk/samples/vst)
+-    add_subdirectory(public.sdk/source/vst/auwrapper/again)
+-    add_subdirectory(public.sdk/source/vst/auv3wrapper)
+-endif(SMTG_ADD_VST3_PLUGINS_SAMPLES)
+-
+-#-------------------------------------------------------------------------------
+-# IDE sorting
+-#-------------------------------------------------------------------------------
+-set_target_properties(sdk
+-    PROPERTIES
+-        ${SDK_IDE_LIBS_FOLDER}
++# --- base  --- 
++install(TARGETS base
++        EXPORT sdkTargets
++        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ )
+-set_target_properties(sdk_common
+-    PROPERTIES
+-        ${SDK_IDE_LIBS_FOLDER}
++
++# --- sdk_common [Depends: base, pluginterfaces] --- 
++install(TARGETS pluginterfaces
++        EXPORT sdkTargets
++        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ )
+-set_target_properties(sdk_hosting
+-    PROPERTIES
+-        ${SDK_IDE_LIBS_FOLDER}
++
++# --- sdk_common [Depends: base, pluginterfaces] --- 
++install(TARGETS sdk_common
++        EXPORT sdkTargets
++        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ )
+-set_target_properties(base
+-    PROPERTIES
+-        ${SDK_IDE_LIBS_FOLDER}
++
++# --- sdk [Depends: sdk_common] --- 
++install(TARGETS sdk
++        EXPORT sdkTargets
++        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+ )
+-set_target_properties(pluginterfaces
+-    PROPERTIES
+-        ${SDK_IDE_LIBS_FOLDER}
++
++# --- Export targets --- 
++install(EXPORT sdkTargets
++        FILE sdkTargets.cmake
++        NAMESPACE vst3sdk::
++        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vst3sdk
+ )
+-if(TARGET base_ios)
+-    set_target_properties(base_ios
+-        PROPERTIES
+-            ${SDK_IDE_LIBS_FOLDER}
+-    )
+-    set_target_properties(pluginterfaces_ios
+-        PROPERTIES
+-            ${SDK_IDE_LIBS_FOLDER}
+-    )
+-endif(TARGET base_ios)
+ 
+-if(SMTG_ADD_VSTGUI)
+-    set_target_properties(vstgui
+-        PROPERTIES
+-            ${SDK_IDE_LIBS_FOLDER}
+-    )
+-    set_target_properties(vstgui_support
+-        PROPERTIES
+-            ${SDK_IDE_LIBS_FOLDER}
+-    )
+-    set_target_properties(vstgui_uidescription
+-        PROPERTIES
+-            ${SDK_IDE_LIBS_FOLDER}
+-    )
++# --- Package Config File (vst3sdkConfig.cmake) --- 
++include(CMakePackageConfigHelpers)
++
++configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
++  "${CMAKE_CURRENT_BINARY_DIR}/vst3sdkConfig.cmake"
++  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vst3sdk
++)
+ 
+-    if(TARGET vstgui_standalone)
+-        set_target_properties(vstgui_standalone
+-            PROPERTIES
+-                ${SDK_IDE_LIBS_FOLDER}
+-        )
+-    endif(TARGET vstgui_standalone)
+-endif(SMTG_ADD_VSTGUI)
++write_basic_package_version_file(
++  "${CMAKE_CURRENT_BINARY_DIR}/vst3sdkConfigVersion.cmake"
++  VERSION "3.7.3"
++  COMPATIBILITY AnyNewerVersion
++)
+ 
+-include(SMTG_CustomModuleTarget)
+-set_target_properties(cmake_modules PROPERTIES ${SDK_IDE_LIBS_FOLDER})
++install(FILES
++          "${CMAKE_CURRENT_BINARY_DIR}/vst3sdkConfig.cmake"
++          "${CMAKE_CURRENT_BINARY_DIR}/vst3sdkConfigVersion.cmake"
++        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vst3sdk
++)
+\ No newline at end of file
+diff --git a/base b/base
+--- a/base
++++ b/base
+@@ -1 +1 @@
+-Subproject commit 985fe019276ee03c2751a1736ba3b390678e29f2
++Subproject commit 985fe019276ee03c2751a1736ba3b390678e29f2-dirty
+diff --git a/doc b/doc
+deleted file mode 160000
+index a3ad6a1..0000000
+--- a/doc
++++ /dev/null
+@@ -1 +0,0 @@
+-Subproject commit a3ad6a147ed8347c802dd2a946d84939a3572164
+diff --git a/pluginterfaces b/pluginterfaces
+--- a/pluginterfaces
++++ b/pluginterfaces
+@@ -1 +1 @@
+-Subproject commit 93cef1afb7061e488625045ba5a82abaa83d27fe
++Subproject commit 93cef1afb7061e488625045ba5a82abaa83d27fe-dirty
+diff --git a/public.sdk b/public.sdk
+--- a/public.sdk
++++ b/public.sdk
+@@ -1 +1 @@
+-Subproject commit 9589800ed94573354bc29de45eec5744523fbfcb
++Subproject commit 9589800ed94573354bc29de45eec5744523fbfcb-dirty
+diff --git a/vstgui4 b/vstgui4
+deleted file mode 160000
+index 6c48e17..0000000
+--- a/vstgui4
++++ /dev/null
+@@ -1 +0,0 @@
+-Subproject commit 6c48e17c174abaf2f1dc8ae41e5fab70599eca6c
